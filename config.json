@@ -1,0 +1,45 @@
+{
+    "devices": [
+        {
+            "ip": "45.125.220.224",
+            "port": 4370,
+            "name": "SERVER ROOM",
+            "enabled": true
+        }
+    ],
+    "sync_interval": 300,
+    "max_retry_attempts": 3,
+    "retry_delay": 5,
+    "clear_device_after_sync": false,
+    "api": {
+        "enabled": true,
+        "endpoint": "https://your-api-domain.com/api/attendance/sync",
+        "method": "POST",
+        "timeout": 30,
+        "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer YOUR_API_TOKEN_HERE",
+            "X-API-Key": "your-secret-key"
+        },
+        "batch_size": 100,
+        "retry_on_failure": true,
+        "save_failed_requests": true
+    },
+    "database": {
+        "enabled": false,
+        "driver": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "name": "attendance_db",
+        "user": "root",
+        "password": "",
+        "charset": "utf8mb4"
+    },
+    "logging": {
+        "enabled": true,
+        "level": "INFO",
+        "file": "logs/service.log",
+        "max_size_mb": 10,
+        "keep_files": 7
+    }
+}
