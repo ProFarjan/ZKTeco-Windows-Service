@@ -1,4 +1,5 @@
-<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+<?php 
+//if (!defined('BASEPATH')) exit('No direct script access allowed');
 
 require_once 'Zkteco/Attendance.php';
 require_once 'Zkteco/Connect.php';

@@ -42,6 +42,26 @@ echo "  Endpoint: {$config['api']['endpoint']}\n";
 echo "  Method: {$config['api']['method']}\n";
 echo "  Timeout: {$config['api']['timeout']}s\n";
 echo "  Batch Size: {$config['api']['batch_size']}\n";
+
+if (!empty($config['api']['custom_params'])) {
+    echo "  Custom Parameters:\n";
+    foreach ($config['api']['custom_params'] as $key => $value) {
+        echo "    - $key: $value\n";
+    }
+}
+
+if (!empty($config['api']['field_mapping'])) {
+    echo "  Field Mapping Enabled: Yes (" . count($config['api']['field_mapping']) . " fields)\n";
+}
+
+if (!empty($config['api']['include_fields'])) {
+    echo "  Include Fields: " . implode(', ', $config['api']['include_fields']) . "\n";
+}
+
+if (!empty($config['api']['exclude_fields'])) {
+    echo "  Exclude Fields: " . implode(', ', $config['api']['exclude_fields']) . "\n";
+}
+
 echo str_repeat("-", 40) . "\n\n";
 
 // Test 1: Connection Test

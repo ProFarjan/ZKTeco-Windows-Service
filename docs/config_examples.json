@@ -1,0 +1,197 @@
+{
+    "_comment": "Configuration Examples for API Customization",
+    
+    "example_1_basic_custom_params": {
+        "api": {
+            "enabled": true,
+            "endpoint": "https://api.example.com/attendance/sync",
+            "custom_params": {
+                "company_id": "COMP001",
+                "branch_code": "BR01",
+                "tenant_id": "tenant_123"
+            }
+        }
+    },
+    
+    "example_2_field_mapping": {
+        "_comment": "Rename fields to match your API requirements",
+        "api": {
+            "field_mapping": {
+                "uid": "employee_uid",
+                "id": "employee_id",
+                "timestamp": "punch_time",
+                "state": "auth_method_code",
+                "state_name": "auth_method",
+                "type": "attendance_type_code",
+                "type_name": "attendance_type",
+                "device_name": "device_id"
+            }
+        }
+    },
+    
+    "example_3_include_only_specific_fields": {
+        "_comment": "Send only specific fields (whitelist)",
+        "api": {
+            "include_fields": [
+                "employee_id",
+                "punch_time",
+                "attendance_type",
+                "device_id"
+            ]
+        }
+    },
+    
+    "example_4_exclude_sensitive_fields": {
+        "_comment": "Remove specific fields from payload (blacklist)",
+        "api": {
+            "exclude_fields": [
+                "password",
+                "cardno",
+                "synced_at"
+            ]
+        }
+    },
+    
+    "example_5_complete_custom_setup": {
+        "api": {
+            "enabled": true,
+            "endpoint": "https://hr.company.com/api/v2/attendance",
+            "method": "POST",
+            "timeout": 60,
+            "headers": {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "X-Company-ID": "12345",
+                "X-API-Key": "secret-key-here"
+            },
+            "batch_size": 50,
+            "custom_params": {
+                "company_id": "ACME_CORP",
+                "location_code": "NYC_01",
+                "department": "Operations",
+                "source_system": "ZKTeco",
+                "data_version": "2.0"
+            },
+            "field_mapping": {
+                "uid": "employee_number",
+                "id": "badge_id",
+                "timestamp": "event_datetime",
+                "state": "verification_type_code",
+                "state_name": "verification_type",
+                "type": "event_type_code",
+                "type_name": "event_type",
+                "device_name": "terminal_id",
+                "synced_at": "received_at"
+            },
+            "include_fields": [],
+            "exclude_fields": ["password"]
+        }
+    },
+    
+    "example_6_minimal_payload": {
+        "_comment": "Send only essential data",
+        "api": {
+            "custom_params": {
+                "client_id": "CLIENT_123"
+            },
+            "field_mapping": {
+                "id": "emp_id",
+                "timestamp": "time",
+                "type": "action"
+            },
+            "include_fields": [
+                "emp_id",
+                "time",
+                "action",
+                "device_name"
+            ]
+        }
+    },
+    
+    "example_7_erp_integration": {
+        "_comment": "Integration with ERP systems like SAP, Oracle",
+        "api": {
+            "endpoint": "https://erp.company.com/api/timemanagement/attendance",
+            "headers": {
+                "Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+                "SAP-Client": "800",
+                "Content-Type": "application/json"
+            },
+            "custom_params": {
+                "plant_code": "P1000",
+                "cost_center": "CC1001",
+                "personnel_area": "PA01",
+                "system_source": "ZKTeco_Biometric"
+            },
+            "field_mapping": {
+                "id": "personnel_number",
+                "timestamp": "attendance_date_time",
+                "type": "attendance_type_id",
+                "device_name": "recording_device"
+            }
+        }
+    },
+    
+    "example_8_webhook_style": {
+        "_comment": "Send as webhook with custom event format",
+        "api": {
+            "endpoint": "https://webhooks.company.com/attendance",
+            "custom_params": {
+                "event_type": "attendance.recorded",
+                "webhook_version": "1.0",
+                "source": "zkteco_device"
+            },
+            "field_mapping": {
+                "id": "user_id",
+                "timestamp": "occurred_at",
+                "type": "event_action"
+            }
+        }
+    },
+    
+    "example_9_multi_tenant_saas": {
+        "_comment": "For SaaS platforms with multiple tenants",
+        "api": {
+            "endpoint": "https://api.saas-platform.com/v1/tenants/{tenant_id}/attendance",
+            "headers": {
+                "Authorization": "Bearer YOUR_TENANT_API_KEY",
+                "X-Tenant-ID": "tenant_abc123"
+            },
+            "custom_params": {
+                "tenant_id": "tenant_abc123",
+                "organization_id": "org_xyz789",
+                "workspace_id": "ws_001",
+                "integration_source": "zkteco"
+            }
+        }
+    },
+    
+    "example_10_legacy_system": {
+        "_comment": "Integration with legacy systems requiring specific format",
+        "api": {
+            "method": "PUT",
+            "endpoint": "http://legacy-server.local/attendance/import",
+            "headers": {
+                "Content-Type": "application/json",
+                "X-Legacy-Auth": "LEGACY_TOKEN_HERE"
+            },
+            "custom_params": {
+                "import_source": "BIOMETRIC",
+                "import_date": "{{current_date}}",
+                "import_user": "SYSTEM"
+            },
+            "field_mapping": {
+                "id": "EMP_NO",
+                "timestamp": "PUNCH_TIME",
+                "type": "PUNCH_TYPE",
+                "device_name": "TERM_ID"
+            },
+            "exclude_fields": [
+                "uid",
+                "state",
+                "state_name",
+                "synced_at"
+            ]
+        }
+    }
+}

@@ -28,14 +28,22 @@ class ApiClient
             return true;
         }
 
+        // Apply custom parameters and field mapping
+        $transformedRecords = $this->transformRecords($attendanceData);
+
         $payload = [
             'device_name' => $deviceName,
             'timestamp' => date('Y-m-d H:i:s'),
-            'total_records' => count($attendanceData),
-            'records' => $attendanceData
+            'total_records' => count($transformedRecords),
+            'records' => $transformedRecords
         ];
 
-        $this->logger->info("Sending " . count($attendanceData) . " records to API for device: $deviceName");
+        // Merge custom params into payload
+        if (!empty($this->config['custom_params'])) {
+            $payload = array_merge($payload, $this->config['custom_params']);
+        }
+
+        $this->logger->info("Sending " . count($transformedRecords) . " records to API for device: $deviceName");
 
         $success = $this->sendRequest($payload);
 
@@ -56,12 +64,15 @@ class ApiClient
             return true;
         }
 
+        // Apply custom parameters and field mapping
+        $transformedRecords = $this->transformRecords($attendanceData);
+
         $batchSize = $this->config['batch_size'];
-        $batches = array_chunk($attendanceData, $batchSize);
+        $batches = array_chunk($transformedRecords, $batchSize);
         $successCount = 0;
         $totalBatches = count($batches);
 
-        $this->logger->info("Sending " . count($attendanceData) . " records in $totalBatches batch(es) to API");
+        $this->logger->info("Sending " . count($transformedRecords) . " records in $totalBatches batch(es) to API");
 
         foreach ($batches as $index => $batch) {
             $batchNum = $index + 1;
@@ -72,6 +83,11 @@ class ApiClient
                 'total_batches' => $totalBatches,
                 'records' => $batch
             ];
+
+            // Merge custom params into payload
+            if (!empty($this->config['custom_params'])) {
+                $payload = array_merge($payload, $this->config['custom_params']);
+            }
 
             if ($this->sendRequest($payload)) {
                 $successCount++;
@@ -269,6 +285,53 @@ class ApiClient
         return $successCount;
     }
 
+    private function transformRecords($records)
+    {
+        $transformed = [];
+        
+        foreach ($records as $record) {
+            $newRecord = [];
+            
+            // Apply field mapping
+            if (!empty($this->config['field_mapping'])) {
+                foreach ($record as $key => $value) {
+                    // Check if this field should be mapped
+                    if (isset($this->config['field_mapping'][$key])) {
+                        $newKey = $this->config['field_mapping'][$key];
+                        $newRecord[$newKey] = $value;
+                    } else {
+                        // Keep original key if no mapping defined
+                        $newRecord[$key] = $value;
+                    }
+                }
+            } else {
+                $newRecord = $record;
+            }
+            
+            // Apply include_fields filter (whitelist)
+            if (!empty($this->config['include_fields']) && is_array($this->config['include_fields'])) {
+                $filtered = [];
+                foreach ($this->config['include_fields'] as $field) {
+                    if (isset($newRecord[$field])) {
+                        $filtered[$field] = $newRecord[$field];
+                    }
+                }
+                $newRecord = $filtered;
+            }
+            
+            // Apply exclude_fields filter (blacklist)
+            if (!empty($this->config['exclude_fields']) && is_array($this->config['exclude_fields'])) {
+                foreach ($this->config['exclude_fields'] as $field) {
+                    unset($newRecord[$field]);
+                }
+            }
+            
+            $transformed[] = $newRecord;
+        }
+        
+        return $transformed;
+    }
+
     public function testConnection()
     {
         if (!$this->config['enabled']) {
@@ -281,6 +344,11 @@ class ApiClient
             'timestamp' => date('Y-m-d H:i:s'),
             'message' => 'Connection test from ZKTeco Service'
         ];
+
+        // Add custom params to test payload
+        if (!empty($this->config['custom_params'])) {
+            $testPayload = array_merge($testPayload, $this->config['custom_params']);
+        }
 
         $this->logger->info("Testing API connection to: {$this->config['endpoint']}");
         return $this->sendRequest($testPayload);

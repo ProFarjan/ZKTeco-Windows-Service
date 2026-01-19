@@ -3,7 +3,7 @@
         {
             "ip": "45.125.220.224",
             "port": 4370,
-            "name": "SERVER ROOM",
+            "name": "HOSPITAL DEVICE 1",
             "enabled": true
         }
     ],
@@ -13,7 +13,7 @@
     "clear_device_after_sync": false,
     "api": {
         "enabled": true,
-        "endpoint": "https://your-api-domain.com/api/attendance/sync",
+        "endpoint": "http://localhost/hospital/api/attendance/push",
         "method": "POST",
         "timeout": 30,
         "headers": {
@@ -23,7 +23,24 @@
         },
         "batch_size": 100,
         "retry_on_failure": true,
-        "save_failed_requests": true
+        "save_failed_requests": true,
+        "custom_params": {
+            "hospital_id": "1"
+        },
+        "field_mapping": {
+            "uid": "staff_id",
+            "id": "staff_id",
+            "user_id": "staff_id",
+            "timestamp": "date",
+            "state": "auth_method",
+            "state_name": "auth_method_name",
+            "type": "attendance_type",
+            "type_name": "attendance_type_name",
+            "device_name": "device_identifier",
+            "synced_at": "sync_timestamp"
+        },
+        "include_fields": [],
+        "exclude_fields": []
     },
     "database": {
         "enabled": false,
