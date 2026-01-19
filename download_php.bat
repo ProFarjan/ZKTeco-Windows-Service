@@ -7,10 +7,10 @@ echo Downloading Standalone PHP
 echo ======================================
 echo.
 
-SET PHP_VERSION=8.2.15
+SET PHP_VERSION=8.2.30
 SET PHP_DIR=%~dp0php
 SET PHP_ZIP=%~dp0php.zip
-SET DOWNLOAD_URL=https://windows.php.net/downloads/releases/php-%PHP_VERSION%-Win32-vs16-x64.zip
+SET DOWNLOAD_URL=https://windows.php.net/downloads/releases/php-%PHP_VERSION%-nts-Win32-vs16-x64.zip
 
 echo This script will download PHP %PHP_VERSION% (Standalone)
 echo Installation directory: %PHP_DIR%
@@ -62,13 +62,18 @@ REM Configure PHP
 echo Configuring PHP...
 copy "%PHP_DIR%\php.ini-production" "%PHP_DIR%\php.ini" >nul
 
-REM Enable required extensions
-powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=curl', 'extension=curl' | Set-Content '%PHP_DIR%\php.ini'"
-powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=mbstring', 'extension=mbstring' | Set-Content '%PHP_DIR%\php.ini'"
-powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=openssl', 'extension=openssl' | Set-Content '%PHP_DIR%\php.ini'"
-powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=pdo_mysql', 'extension=pdo_mysql' | Set-Content '%PHP_DIR%\php.ini'"
-powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=mysqli', 'extension=mysqli' | Set-Content '%PHP_DIR%\php.ini'"
-powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=sockets', 'extension=sockets' | Set-Content '%PHP_DIR%\php.ini'"
+REM Set extension directory to relative path (not absolute)
+powershell -Command "$content = Get-Content '%PHP_DIR%\php.ini'; $content = $content -replace ';extension_dir = \"ext\"', 'extension_dir = \"ext\"' -replace 'extension_dir = \"C:\\\\php\\\\ext\"', 'extension_dir = \"ext\"' -replace 'extension_dir = \"C:/php/ext\"', 'extension_dir = \"ext\"'; $content | Set-Content '%PHP_DIR%\php.ini'"
+
+REM Enable required extensions (add php_ prefix and .dll extension)
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=curl', 'extension=php_curl.dll' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=mbstring', 'extension=php_mbstring.dll' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=openssl', 'extension=php_openssl.dll' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=pdo_mysql', 'extension=php_pdo_mysql.dll' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=mysqli', 'extension=php_mysqli.dll' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=sockets', 'extension=php_sockets.dll' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=gd', 'extension=gd' | Set-Content '%PHP_DIR%\php.ini'"
+powershell -Command "(Get-Content '%PHP_DIR%\php.ini') -replace ';extension=intl', 'extension=intl' | Set-Content '%PHP_DIR%\php.ini'"
 
 REM Clean up
 echo Cleaning up...
