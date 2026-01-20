@@ -13,7 +13,7 @@
     "clear_device_after_sync": false,
     "api": {
         "enabled": true,
-        "endpoint": "http://localhost/hospital/api/attendance/push",
+        "endpoint": "http://localhost/pos/api/v1/pull_attendance",
         "method": "POST",
         "timeout": 30,
         "headers": {
@@ -24,13 +24,13 @@
         "retry_on_failure": true,
         "save_failed_requests": true,
         "custom_params": {
-            "hospital_id": "1"
+            "store_id": "1"
         },
         "field_mapping": {
-            "uid": "staff_id",
-            "id": "staff_id",
-            "user_id": "staff_id",
-            "timestamp": "date",
+            "uid": "user_id",
+            "id": "user_id",
+            "user_id": "user_id",
+            "timestamp": "attendance_datetime",
             "state": "auth_method",
             "state_name": "auth_method_name",
             "type": "attendance_type",
