@@ -18,8 +18,7 @@
         "timeout": 30,
         "headers": {
             "Content-Type": "application/json",
-            "Authorization": "Bearer YOUR_API_TOKEN_HERE",
-            "X-API-Key": "your-secret-key"
+            "X-API-Key": "1012a98825c0ce6d9a2f8afc5bdb6ca3f4b61453665aab7581ab3eaad259d4dd"
         },
         "batch_size": 100,
         "retry_on_failure": true,

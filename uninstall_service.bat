@@ -3,6 +3,7 @@ REM ZKTeco Service Uninstallation Script
 REM Run this as Administrator
 
 SET SERVICE_NAME=ZkTecoSync
+SET NSSM_PATH=%~dp0nssm.exe
 
 echo ======================================
 echo ZKTeco Service Uninstallation
@@ -18,6 +19,13 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM Check if NSSM exists
+if not exist "%NSSM_PATH%" (
+    echo ERROR: NSSM not found at %NSSM_PATH%
+    pause
+    exit /b 1
+)
+
 REM Check if service exists
 sc query %SERVICE_NAME% >nul 2>&1
 if %errorlevel% neq 0 (
@@ -27,11 +35,11 @@ if %errorlevel% neq 0 (
 )
 
 echo Stopping service %SERVICE_NAME%...
-nssm stop %SERVICE_NAME%
+"%NSSM_PATH%" stop %SERVICE_NAME%
 timeout /t 3 >nul
 
 echo Removing service %SERVICE_NAME%...
-nssm remove %SERVICE_NAME% confirm
+"%NSSM_PATH%" remove %SERVICE_NAME% confirm
 
 echo.
 echo Service uninstalled successfully!

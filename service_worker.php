@@ -6,8 +6,10 @@
  * Usage: php service_worker.php
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Suppress deprecation warnings when running as service
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 set_time_limit(0);
 
 require_once 'Zkteco.php';
@@ -144,8 +146,8 @@ class ZkTecoServiceWorker
             // Sync attendance records
             $attendanceCount = $this->syncAttendance($zk, $deviceName);
             
-            // Sync users (optional, less frequent)
-            if ($this->shouldSyncUsers($deviceName)) {
+            // Sync users (optional, less frequent, only if database is enabled)
+            if ($this->config['database']['enabled'] && $this->shouldSyncUsers($deviceName)) {
                 $userCount = $this->syncUsers($zk, $deviceName);
                 $this->logger->info("Device [$deviceName]: Synced $userCount user(s)");
             }
