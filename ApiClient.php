@@ -64,15 +64,28 @@ class ApiClient
             return true;
         }
 
-        // Apply custom parameters and field mapping
+        // Apply custom parameters and field mapping to new records
         $transformedRecords = $this->transformRecords($attendanceData);
 
+        // Load previously failed records for this device and merge them in
+        [$failedEntryIndices, $failedRecords] = $this->loadFailedRecordsForDevice($deviceName);
+
+        // Prepend failed records so they are retried first
+        $allRecords = array_merge($failedRecords, $transformedRecords);
+
+        // Remove old failed entries now — they are folded into this attempt.
+        // If this attempt also fails, saveFailedRequest() will re-save them.
+        if (!empty($failedEntryIndices)) {
+            $this->removeFailedEntries($failedEntryIndices);
+            $this->logger->info("Merged " . count($failedRecords) . " previously failed record(s) into current batch for device: $deviceName");
+        }
+
         $batchSize = $this->config['batch_size'];
-        $batches = array_chunk($transformedRecords, $batchSize);
+        $batches = array_chunk($allRecords, $batchSize);
         $successCount = 0;
         $totalBatches = count($batches);
 
-        $this->logger->info("Sending " . count($transformedRecords) . " records in $totalBatches batch(es) to API");
+        $this->logger->info("Sending " . count($allRecords) . " records in $totalBatches batch(es) to API for device: $deviceName");
 
         foreach ($batches as $index => $batch) {
             $batchNum = $index + 1;
@@ -105,6 +118,65 @@ class ApiClient
 
         $this->logger->info("API batch send complete: $successCount/$totalBatches batches successful");
         return $successCount === $totalBatches;
+    }
+
+    /**
+     * Load previously failed records for a specific device.
+     * Returns [array $entryIndices, array $records] where records are already-transformed.
+     */
+    private function loadFailedRecordsForDevice($deviceName)
+    {
+        if (!file_exists($this->failedRequestsFile)) {
+            return [[], []];
+        }
+
+        $content = file_get_contents($this->failedRequestsFile);
+        $allFailed = json_decode($content, true) ?: [];
+
+        $indices = [];
+        $records = [];
+
+        foreach ($allFailed as $index => $entry) {
+            if (isset($entry['payload']['device_name']) && $entry['payload']['device_name'] === $deviceName) {
+                $indices[] = $index;
+                if (!empty($entry['payload']['records'])) {
+                    foreach ($entry['payload']['records'] as $record) {
+                        $records[] = $record;
+                    }
+                }
+            }
+        }
+
+        return [$indices, $records];
+    }
+
+    /**
+     * Remove specific entries from the failed requests log by their array indices.
+     */
+    private function removeFailedEntries(array $indicesToRemove)
+    {
+        if (!file_exists($this->failedRequestsFile)) {
+            return;
+        }
+
+        $content = file_get_contents($this->failedRequestsFile);
+        $allFailed = json_decode($content, true) ?: [];
+
+        foreach ($indicesToRemove as $index) {
+            unset($allFailed[$index]);
+        }
+
+        $remaining = array_values($allFailed);
+
+        if (empty($remaining)) {
+            unlink($this->failedRequestsFile);
+            $this->logger->info("All failed requests for this device have been cleared from log");
+        } else {
+            file_put_contents(
+                $this->failedRequestsFile,
+                json_encode($remaining, JSON_PRETTY_PRINT)
+            );
+        }
     }
 
     private function sendRequest($payload)
