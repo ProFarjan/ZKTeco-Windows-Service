@@ -330,6 +330,57 @@ Look for: **ZKTeco Attendance Sync Service**
 
 ---
 
+## 🔄 Device-Management Commands (built into the `api` block)
+
+Any backend behind `api.endpoint` can optionally also manage device users —
+this is a core capability, not a separate mode, so it works for every
+project using this codebase with **zero extra config**. No new fields, no
+separate toggle.
+
+Each sync cycle, the existing attendance push (`ApiClient::sendAttendanceBatch()`)
+already:
+1. POSTs attendance for the device to `api.endpoint` (an empty batch if
+   there's nothing new — this heartbeat is what lets step 2 below happen
+   even on a quiet day with no attendance).
+2. Also sends `command_results` for anything executed last cycle, if any.
+3. Reads the JSON response — if it contains a top-level `commands` array,
+   the worker executes each one against the device this cycle
+   (`create_user`/`update_user`/`delete_user`/`list_users`, via the
+   existing `Zkteco::setUser()/removeUser()/getUser()`) and reports results
+   on the *next* cycle's push (step 2 above).
+
+A backend that never returns `commands` (like this deployment's hospital
+POS endpoint) simply never triggers any of this — it's a no-op, and nothing
+about the existing attendance-only flow changes.
+
+**Request/response shape**, for a backend that wants to opt in:
+
+```json
+// POST to api.endpoint
+{
+  "device_name": "Main Gate",
+  "records": [ { "...": "attendance record after field_mapping" } ],
+  "command_results": [
+    { "id": 5, "success": true, "message": "User created.", "data": { "uid": 12 } }
+  ]
+}
+```
+```json
+// Response
+{
+  "success": true,
+  "commands": [
+    { "id": 6, "type": "delete_user", "payload": { "user_id": "1042" } }
+  ]
+}
+```
+
+Command `type` is one of `list_users` / `create_user` / `update_user` /
+`delete_user`. For create/update, `payload` may include `name`, `password`,
+`role`, `card_no` alongside `user_id`.
+
+---
+
 ## 📁 Log Files
 
 ### `logs/service.log`

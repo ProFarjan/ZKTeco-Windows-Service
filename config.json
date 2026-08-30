@@ -1,24 +1,24 @@
 {
     "devices": [
         {
-            "ip": "45.125.220.224",
+            "ip": "192.168.0.245",
             "port": 4370,
-            "name": "HOSPITAL DEVICE 1",
+            "name": "GirliGril",
             "enabled": true
         }
     ],
-    "sync_interval": 300,
+    "sync_interval": 60,
     "max_retry_attempts": 3,
     "retry_delay": 5,
-    "clear_device_after_sync": false,
+    "clear_device_after_sync": true,
     "api": {
         "enabled": true,
-        "endpoint": "http://localhost/pos/api/v1/pull_attendance",
+        "endpoint": "http://localhost:8000/api/zkteco/sync",
         "method": "POST",
         "timeout": 30,
         "headers": {
             "Content-Type": "application/json",
-            "X-API-Key": "1012a98825c0ce6d9a2f8afc5bdb6ca3f4b61453665aab7581ab3eaad259d4dd"
+            "X-API-Key": "RxxzGQhdui68nn6Ebcx7nM3ehDLmWkL0f6o6yEPMys7sGBAv"
         },
         "batch_size": 100,
         "retry_on_failure": true,

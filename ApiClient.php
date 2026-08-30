@@ -45,7 +45,8 @@ class ApiClient
 
         $this->logger->info("Sending " . count($transformedRecords) . " records to API for device: $deviceName");
 
-        $success = $this->sendRequest($payload);
+        $response = $this->sendRequest($payload);
+        $success = $response !== false;
 
         if (!$success && $this->config['save_failed_requests']) {
             $this->saveFailedRequest($payload);
@@ -54,14 +55,20 @@ class ApiClient
         return $success;
     }
 
-    public function sendAttendanceBatch($attendanceData, $deviceName)
+    /**
+     * Pushes attendance (possibly empty) and, if provided, results for
+     * commands executed last cycle — and always makes at least one request
+     * when enabled, even with nothing new, so a backend that returns
+     * "commands" in its response isn't starved of a heartbeat to deliver
+     * them on. Any backend that doesn't return "commands" is unaffected —
+     * $result['commands'] just stays empty.
+     *
+     * @return array{success: bool, commands: array}
+     */
+    public function sendAttendanceBatch($attendanceData, $deviceName, $commandResults = [])
     {
         if (!$this->config['enabled']) {
-            return true;
-        }
-
-        if (empty($attendanceData)) {
-            return true;
+            return ['success' => true, 'commands' => []];
         }
 
         // Apply custom parameters and field mapping to new records
@@ -81,11 +88,17 @@ class ApiClient
         }
 
         $batchSize = $this->config['batch_size'];
-        $batches = array_chunk($allRecords, $batchSize);
+        // array_chunk() on an empty array yields zero batches, which would
+        // skip sending entirely — force exactly one (possibly empty) batch
+        // so a heartbeat still goes out when there's nothing new to push.
+        $batches = !empty($allRecords) ? array_chunk($allRecords, $batchSize) : [[]];
         $successCount = 0;
         $totalBatches = count($batches);
+        $allCommands = [];
 
-        $this->logger->info("Sending " . count($allRecords) . " records in $totalBatches batch(es) to API for device: $deviceName");
+        if (!empty($allRecords)) {
+            $this->logger->info("Sending " . count($allRecords) . " records in $totalBatches batch(es) to API for device: $deviceName");
+        }
 
         foreach ($batches as $index => $batch) {
             $batchNum = $index + 1;
@@ -97,13 +110,26 @@ class ApiClient
                 'records' => $batch
             ];
 
+            // Command results only need to go out once per cycle, not
+            // duplicated across every batch.
+            if ($batchNum === 1 && !empty($commandResults)) {
+                $payload['command_results'] = $commandResults;
+            }
+
             // Merge custom params into payload
             if (!empty($this->config['custom_params'])) {
                 $payload = array_merge($payload, $this->config['custom_params']);
             }
 
-            if ($this->sendRequest($payload)) {
+            $response = $this->sendRequest($payload);
+
+            if ($response !== false) {
                 $successCount++;
+
+                $decoded = json_decode($response, true);
+                if (is_array($decoded) && !empty($decoded['commands']) && is_array($decoded['commands'])) {
+                    $allCommands = array_merge($allCommands, $decoded['commands']);
+                }
             } else {
                 if ($this->config['save_failed_requests']) {
                     $this->saveFailedRequest($payload);
@@ -117,7 +143,8 @@ class ApiClient
         }
 
         $this->logger->info("API batch send complete: $successCount/$totalBatches batches successful");
-        return $successCount === $totalBatches;
+
+        return ['success' => $successCount === $totalBatches, 'commands' => $allCommands];
     }
 
     /**
@@ -179,6 +206,9 @@ class ApiClient
         }
     }
 
+    /**
+     * @return string|false Response body on success (HTTP 2xx), false on failure.
+     */
     private function sendRequest($payload)
     {
         $jsonData = json_encode($payload);
@@ -231,7 +261,7 @@ class ApiClient
         if ($httpCode >= 200 && $httpCode < 300) {
             $this->logger->info("API request successful: HTTP $httpCode (Time: {$executionTime}s)");
             $this->logger->debug("API Response: " . substr($response, 0, 200));
-            return true;
+            return $response;
         } else {
             $this->logger->error("API request failed: HTTP $httpCode (Time: {$executionTime}s)");
             $this->logger->debug("API Response: " . substr($response, 0, 500));
@@ -247,6 +277,9 @@ class ApiClient
         }
     }
 
+    /**
+     * @return string|false Response body on success (HTTP 2xx), false on failure.
+     */
     private function retryRequest($payload)
     {
         $jsonData = json_encode($payload);
@@ -281,7 +314,7 @@ class ApiClient
 
         if ($httpCode >= 200 && $httpCode < 300) {
             $this->logger->info("API retry successful: HTTP $httpCode");
-            return true;
+            return $response;
         }
 
         $this->logger->error("API retry failed: HTTP $httpCode");
@@ -335,7 +368,7 @@ class ApiClient
         $remainingFailed = [];
 
         foreach ($failedRequests as $request) {
-            if ($this->sendRequest($request['payload'])) {
+            if ($this->sendRequest($request['payload']) !== false) {
                 $successCount++;
             } else {
                 $remainingFailed[] = $request;
@@ -423,6 +456,6 @@ class ApiClient
         }
 
         $this->logger->info("Testing API connection to: {$this->config['endpoint']}");
-        return $this->sendRequest($testPayload);
+        return $this->sendRequest($testPayload) !== false;
     }
 }
