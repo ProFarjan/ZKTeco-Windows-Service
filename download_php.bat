@@ -7,7 +7,7 @@ echo Downloading Standalone PHP
 echo ======================================
 echo.
 
-SET PHP_VERSION=8.2.30
+SET PHP_VERSION=8.2.34
 SET PHP_DIR=%~dp0php
 SET PHP_ZIP=%~dp0php.zip
 SET DOWNLOAD_URL=https://windows.php.net/downloads/releases/php-%PHP_VERSION%-nts-Win32-vs16-x64.zip
