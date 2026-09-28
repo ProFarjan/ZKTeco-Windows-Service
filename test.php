@@ -3,7 +3,7 @@ require_once 'Zkteco.php';
 header('Content-Type: application/json');
 $zk = new Zkteco();
 $zk->initialize([
-    'ip' => "192.168.0.245",
+    'ip' => "192.168.0.100",
     'port' => 4370
 ]);
 if ($zk->connect()) {

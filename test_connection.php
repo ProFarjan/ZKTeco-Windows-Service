@@ -39,7 +39,9 @@ foreach ($devices as $device) {
     $zk = new Zkteco();
     $zk->initialize([
         'ip' => $device['ip'],
-        'port' => $device['port']
+        'port' => $device['port'],
+        'protocol' => isset($device['protocol']) ? $device['protocol'] : 'UDP',
+        'password' => isset($device['password']) ? $device['password'] : 0
     ]);
 
     // Test connection

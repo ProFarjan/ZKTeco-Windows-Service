@@ -134,7 +134,9 @@ class ZkTecoServiceWorker
         $zk = new Zkteco();
         $zk->initialize([
             'ip' => $deviceConfig['ip'],
-            'port' => $deviceConfig['port']
+            'port' => $deviceConfig['port'],
+            'protocol' => isset($deviceConfig['protocol']) ? $deviceConfig['protocol'] : 'UDP',
+            'password' => isset($deviceConfig['password']) ? $deviceConfig['password'] : 0
         ]);
 
         // Connect with retry logic

@@ -20,6 +20,30 @@ class ZkUtil
 
   const CMD_WRITE_LCD = 66; # Write in LCD
   const CMD_CLEAR_LCD = 67; # Clear LCD
+  const CMD_AUTH = 1102; # Authentication
+
+  static public function makeCommKey($key, $session_id, $ticks = 50) {
+    $key = (int)$key;
+    $session_id = (int)$session_id;
+    $k = 0;
+    for ($i = 0; $i < 32; $i++) {
+        if ($key & (1 << $i)) {
+            $k = ($k << 1 | 1);
+        } else {
+            $k = ($k << 1);
+        }
+    }
+    $k = ($k + $session_id) & 0xFFFFFFFF;
+    $k_pack = pack('V', $k);
+    $k_un = unpack('C4', $k_pack);
+    $k_pack = pack('C4', $k_un[1] ^ ord('Z'), $k_un[2] ^ ord('K'), $k_un[3] ^ ord('S'), $k_un[4] ^ ord('O'));
+    $k_un2 = unpack('v2', $k_pack);
+    $k_pack = pack('v2', $k_un2[2], $k_un2[1]);
+    $B = 0xFF & $ticks;
+    $k_un3 = unpack('C4', $k_pack);
+    $k_pack = pack('C4', $k_un3[1] ^ $B, $k_un3[2] ^ $B, $B, $k_un3[4] ^ $B);
+    return $k_pack;
+  }
 
   const CMD_ACK_OK = 2000; # Return value for order perform successfully
   const CMD_ACK_ERROR = 2001; # Return value for order perform failed
@@ -210,7 +234,7 @@ class ZkUtil
     $u = unpack('H2h1/H2h2', substr($reply, 0, 8));
 
     $command = hexdec($u['h2'] . $u['h1']);
-    if ($command == self::CMD_ACK_OK || $command == self::CMD_ACK_UNAUTH) {
+    if ($command == self::CMD_ACK_OK || $command == self::CMD_ACK_UNAUTH || $command == 6001) {
       return true;
     } else {
       return false;
@@ -284,7 +308,8 @@ class ZkUtil
       $errors = 0;
 
       while ($bytes > $received) {
-        $ret = @socket_recvfrom($self->_zkclient, $dataRec, 1032, 0, $self->_ip, $self->_port);
+        $dataRec = $self->zk_recv(1032);
+        $ret = strlen($dataRec) > 0 ? true : false;
 
         if ($ret === false) {
           if ($errors < $maxErrors) {
@@ -309,7 +334,7 @@ class ZkUtil
         $first = false;
       }
 
-      @socket_recvfrom($self->_zkclient, $dataRec, 1024, 0, $self->_ip, $self->_port);
+      $self->zk_recv(1024);
       unset($dataRec);
     }
 

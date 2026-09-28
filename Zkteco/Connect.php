@@ -14,10 +14,10 @@ class ZkConnect
 
         $buf = ZkUtil::createHeader($command, $chksum, $session_id, $reply_id, $command_string);
 
-        socket_sendto($self->_zkclient, $buf, strlen($buf), 0, $self->_ip, $self->_port);
+        $self->zk_send($buf);
 
         try {
-            @socket_recvfrom($self->_zkclient, $self->_data_recv, 1024, 0, $self->_ip, $self->_port);
+            $self->_data_recv = $self->zk_recv(1024);
             if (strlen($self->_data_recv) > 0) {
                 $u = unpack('H2h1/H2h2/H2h3/H2h4/H2h5/H2h6', substr($self->_data_recv, 0, 8));
 
@@ -27,6 +27,13 @@ class ZkConnect
                 }
 
                 $self->_session_id = $session;
+
+                $command_resp = hexdec($u['h2'] . $u['h1']);
+                if ($command_resp == ZkUtil::CMD_ACK_UNAUTH || $command_resp == 6001) {
+                    $auth_payload = ZkUtil::makeCommKey($self->_password, $session);
+                    $self->_command(ZkUtil::CMD_AUTH, $auth_payload);
+                }
+
                 return ZkUtil::checkValid($self->_data_recv);
             } else {
                 return false;
@@ -52,10 +59,9 @@ class ZkConnect
 
         $buf = ZkUtil::createHeader($command, $chksum, $session_id, $reply_id, $command_string);
 
-
-        socket_sendto($self->_zkclient, $buf, strlen($buf), 0, $self->_ip, $self->_port);
+        $self->zk_send($buf);
         try {
-            @socket_recvfrom($self->_zkclient, $self->_data_recv, 1024, 0, $self->_ip, $self->_port);
+            $self->_data_recv = $self->zk_recv(1024);
 
             $self->_session_id = 0;
             return ZkUtil::checkValid($self->_data_recv);

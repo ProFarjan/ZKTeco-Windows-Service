@@ -87,10 +87,14 @@ class ApiClient
             $this->logger->info("Merged " . count($failedRecords) . " previously failed record(s) into current batch for device: $deviceName");
         }
 
+        // If the user configured it so they don't want empty heartbeats, 
+        // we can skip sending if there are absolutely no records and no command results.
+        if (empty($allRecords) && empty($commandResults)) {
+            $this->logger->debug("Device [$deviceName]: 0 attendance records and no commands, skipping API request");
+            return ['success' => true, 'commands' => []];
+        }
+
         $batchSize = $this->config['batch_size'];
-        // array_chunk() on an empty array yields zero batches, which would
-        // skip sending entirely — force exactly one (possibly empty) batch
-        // so a heartbeat still goes out when there's nothing new to push.
         $batches = !empty($allRecords) ? array_chunk($allRecords, $batchSize) : [[]];
         $successCount = 0;
         $totalBatches = count($batches);

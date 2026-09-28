@@ -4,6 +4,14 @@
             "ip": "192.168.0.245",
             "port": 4370,
             "name": "GirliGril",
+            "enabled": false
+        },
+        {
+            "ip": "192.168.0.100",
+            "port": 4370,
+            "name": "SenseFace 2A",
+            "protocol": "UDP",
+            "password": "123456",
             "enabled": true
         }
     ],
